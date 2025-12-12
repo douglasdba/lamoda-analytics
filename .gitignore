@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.env
+credentials.local.toml
+credentials.toml
+
+# Credenciais
+credentials.toml
+credentials.local.toml
+.secrets.toml
+
+# Bases de dados
+data/
+raw/
+*.csv
+*.xlsx
+*.xls
