@@ -1,0 +1,51 @@
+/* ===========================
+   IDENTIDADE VISUAL LA MODA
+   =========================== */
+
+:root {
+    --bg: #0B0F19;
+    --sidebar-bg: #111927;
+    --text: #E7E7E7;
+    --accent: #D72638;
+    --card-bg: #162033;
+}
+
+/* Fundo geral */
+body, .stApp {
+    background-color: var(--bg) !important;
+    color: var(--text) !important;
+    font-family: "Inter", sans-serif;
+}
+
+/* Sidebar */
+section[data-testid="stSidebar"] {
+    background-color: var(--sidebar-bg) !important;
+    padding-top: 30px;
+}
+
+section[data-testid="stSidebar"] h2, 
+section[data-testid="stSidebar"] p, 
+section[data-testid="stSidebar"] li {
+    color: var(--text) !important;
+}
+
+/* Título */
+h1, h2, h3 {
+    color: white !important;
+    font-weight: 700;
+}
+
+/* Links ativos */
+a, a:visited {
+    color: var(--accent) !important;
+}
+
+/* Cards */
+.stMarkdown, .stMetric, .stText, .stTable, .stPlotlyChart {
+    background: var(--card-bg) !important;
+    padding: 18px;
+    border-radius: 12px;
+}
+
+/* Esconde menu hambúrguer e rodapé */
+#MainMenu, footer {visibility: hidden;}
