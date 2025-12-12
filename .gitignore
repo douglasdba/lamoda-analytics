@@ -1,17 +1,31 @@
+# ===============================
+# Dados e regras (NUNCA subir)
+# ===============================
+lamoda_dados/
+lamoda_dados/raw/
+lamoda_dados/data/
+
+mapeamentos/
+
+*.csv
+*.xls
+*.xlsx
+
+# ===============================
+# Credenciais locais
+# ===============================
+credentials.local.toml
+
+# ===============================
+# Python
+# ===============================
 __pycache__/
 *.pyc
-.env
-credentials.local.toml
-credentials.toml
+.venv/
+env/
+venv/
 
-# Credenciais
-credentials.toml
-credentials.local.toml
-.secrets.toml
-
-# Bases de dados
-data/
-raw/
-*.csv
-*.xlsx
-*.xls
+# ===============================
+# Streamlit cache
+# ===============================
+.streamlit/cache/

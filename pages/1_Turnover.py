@@ -4,18 +4,33 @@ import plotly.express as px
 from calendar import monthrange
 from io import BytesIO
 from login import require_login
+from pathlib import Path
 
 require_login()
-
 
 # ==============================================================
 # 1) CARREGAR BASE TRATADA
 # ==============================================================
 
-@st.cache_data
-def load_data():
-    df = pd.read_csv("data/base_tratada.csv", sep=",", encoding="utf-8")
+# ==============================================================
+# CONFIGURAÇÃO DE CAMINHOS (PADRÃO SEGURO)
+# ==============================================================
 
+BASE_DIR = Path(__file__).resolve().parents[1]
+DATA_ROOT = BASE_DIR.parent / "lamoda_dados"
+DATA_DIR = DATA_ROOT / "data"
+
+
+@st.cache_data(show_spinner="Carregando base de dados…")
+def load_data():
+    if not (DATA_DIR / "base_tratada.csv").exists():
+        st.error(
+        "Base de dados não encontrada.\n\n"
+        "Execute o process_data.py localmente para gerar a base tratada."
+    )
+    st.stop()
+
+    df = pd.read_csv(DATA_DIR / "base_tratada.csv", sep=",", encoding="utf-8")
     # Datas
     df["Admissão"] = pd.to_datetime(df["Admissão"], errors="coerce")
     df["Data Afastamento"] = pd.to_datetime(df["Data Afastamento"], errors="coerce")

@@ -3,8 +3,20 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime
 from login import require_login
+from pathlib import Path
+
 
 require_login()
+
+
+# ==============================================================
+# CONFIGURAÇÃO DE CAMINHOS (PADRÃO SEGURO)
+# ==============================================================
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+DATA_ROOT = BASE_DIR.parent / "lamoda_dados"
+DATA_DIR = DATA_ROOT / "data"
+
 
 st.set_page_config(page_title="Tempo de Casa", page_icon="🏡", layout="wide")
 
@@ -12,53 +24,22 @@ st.set_page_config(page_title="Tempo de Casa", page_icon="🏡", layout="wide")
 # 1) GERAR / CARREGAR tempo_de_casa.csv A PARTIR DA base_tratada.csv
 # ==============================================================
 
-def gerar_arquivo_tempo_de_casa():
-    df_base = pd.read_csv("data/base_tratada.csv", sep=",", encoding="utf-8")
-
-    # Datas
-    df_base["Admissão"] = pd.to_datetime(df_base["Admissão"], errors="coerce")
-    df_base["Data Afastamento"] = pd.to_datetime(df_base["Data Afastamento"], errors="coerce")
-
-    hoje = pd.to_datetime("today")
-
-    # Se não tem afastamento, considera hoje como referência
-    df_base["Data Ref"] = df_base["Data Afastamento"].fillna(hoje)
-
-    # Tempo de casa em dias (nunca negativo)
-    df_base["Dias_de_Casa"] = (df_base["Data Ref"] - df_base["Admissão"]).dt.days
-    df_base["Dias_de_Casa"] = df_base["Dias_de_Casa"].clip(lower=0)
-
-    # Converter para meses / anos
-    df_base["Meses_de_Casa"] = (df_base["Dias_de_Casa"] / 30.44).round(1)
-    df_base["Anos_de_Casa"] = (df_base["Dias_de_Casa"] / 365).round(2)
-
-    colunas = [
-        "Nome",
-        "Admissão",
-        "Data Afastamento",
-        "Situacao_res",
-        "Area",
-        "Descrição (C.Custo)",
-        "Título Reduzido (Cargo)",
-        "Dias_de_Casa",
-        "Meses_de_Casa",
-        "Anos_de_Casa",
-    ]
-
-    df_out = df_base[colunas].copy()
-    df_out.to_csv("data/tempo_de_casa.csv", index=False, encoding="utf-8")
-    return df_out
-
-
-@st.cache_data
+@st.cache_data(show_spinner="Carregando base de tempo de casa…")
 def load_tempo_casa():
-    try:
-        df = pd.read_csv("data/tempo_de_casa.csv", sep=",", encoding="utf-8")
-    except FileNotFoundError:
-        df = gerar_arquivo_tempo_de_casa()
+    path = DATA_DIR / "tempo_de_casa.csv"
+
+    if not path.exists():
+        st.error(
+            "Base tempo_de_casa.csv não encontrada.\n\n"
+            "Execute o process_data.py localmente para gerar as bases."
+        )
+        st.stop()
+
+    df = pd.read_csv(path, sep=",", encoding="utf-8")
 
     df["Admissão"] = pd.to_datetime(df["Admissão"], errors="coerce")
     df["Data Afastamento"] = pd.to_datetime(df["Data Afastamento"], errors="coerce")
+
     return df
 
 

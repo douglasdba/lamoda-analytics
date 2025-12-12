@@ -8,44 +8,176 @@
     --text: #E7E7E7;
     --accent: #D72638;
     --card-bg: #162033;
+    --signature-text: #8FA3B0;
 }
 
-/* Fundo geral */
+/* ===========================
+   FUNDO GERAL
+   =========================== */
+
 body, .stApp {
     background-color: var(--bg) !important;
     color: var(--text) !important;
     font-family: "Inter", sans-serif;
 }
 
-/* Sidebar */
+/* ===========================
+   SIDEBAR
+   =========================== */
+
 section[data-testid="stSidebar"] {
     background-color: var(--sidebar-bg) !important;
-    padding-top: 30px;
+    padding-top: 20px !important;
 }
 
-section[data-testid="stSidebar"] h2, 
-section[data-testid="stSidebar"] p, 
-section[data-testid="stSidebar"] li {
+/* Remove comportamentos automáticos do Streamlit */
+section[data-testid="stSidebar"] * {
     color: var(--text) !important;
+    background: none !important;
+    box-shadow: none !important;
 }
 
-/* Título */
+/* Impede o Markdown do sidebar virar card */
+section[data-testid="stSidebar"] div[data-testid="stMarkdown"] {
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+}
+
+/* ===========================
+   ASSINATURA ELEGANTE
+   =========================== */
+
+.sidebar-signature {
+    text-align: center;
+    padding: 6px 0 2px 0;
+    margin-top: 35px;
+    background: none !important;
+}
+
+.sidebar-signature b {
+    font-size: 14px;
+    color: var(--signature-text);
+}
+
+.sidebar-signature i {
+    font-size: 12px;
+    color: var(--signature-text);
+    opacity: 0.8;
+}
+
+/* Linha decorativa minimalista */
+.sidebar-divider {
+    width: 60%;
+    height: 1px;
+    background-color: #2A3441;
+    margin: 20px auto 10px auto;
+    border-radius: 2px;
+}
+
+/* ===========================
+   TÍTULOS
+   =========================== */
+
 h1, h2, h3 {
-    color: white !important;
-    font-weight: 700;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
 }
 
-/* Links ativos */
 a, a:visited {
     color: var(--accent) !important;
 }
 
-/* Cards */
-.stMarkdown, .stMetric, .stText, .stTable, .stPlotlyChart {
+/* ===========================
+   CARDS PRINCIPAIS
+   =========================== */
+
+div[data-testid="stVerticalBlock"] .stMarkdown,
+div[data-testid="stVerticalBlock"] .stMetric,
+div[data-testid="stVerticalBlock"] .stText,
+div[data-testid="stVerticalBlock"] .stTable,
+div[data-testid="stVerticalBlock"] .stPlotlyChart {
     background: var(--card-bg) !important;
-    padding: 18px;
-    border-radius: 12px;
+    padding: 18px !important;
+    border-radius: 12px !important;
 }
 
-/* Esconde menu hambúrguer e rodapé */
-#MainMenu, footer {visibility: hidden;}
+/* Evita que HTML personalizado vire card */
+.block-container div:has(> div[data-testid="stMarkdown"]) {
+    background: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+}
+
+/* ===========================
+   MENU E RODAPÉ
+   =========================== */
+
+#MainMenu, footer {
+    visibility: hidden !important;
+}
+
+/* ============================
+   ESTILO PREMIUM — ASSISTENTE IA LA MODA BI
+   ============================ */
+
+.assistant-avatar {
+    width: 64px;
+    height: 64px;
+    margin-right: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+}
+
+.assistant-response {
+    background: var(--assistant-bg, #1C2638);
+    padding: 16px 20px;
+    border-radius: 12px;
+    border-left: 4px solid var(--accent);
+    margin-top: 12px;
+    line-height: 1.6;
+    color: var(--text);
+    font-size: 16px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.35);
+}
+
+/* Campo de pergunta exclusivo do assistente */
+.input-ai input[type="text"] {
+    background-color: var(--card-bg) !important;
+    border-radius: 10px !important;
+    padding: 10px !important;
+    color: var(--text) !important;
+    border: 1px solid var(--card-border, #222C3C) !important;
+    font-size: 16px !important;
+}
+
+/* Botão do assistente */
+.stButton > button {
+    background-color: var(--accent) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    padding: 8px 18px !important;
+    font-size: 15px !important;
+}
+
+.stButton > button:hover {
+    background-color: #b51f2e !important;
+}
+
+/* Botão de voz */
+.voice-btn {
+    background:#D72638;
+    color:white;
+    padding:6px 14px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    margin-bottom:10px;
+    font-size: 14px;
+    transition: 0.2s ease;
+}
+
+.voice-btn:hover {
+    background:#b51f2e;
+}

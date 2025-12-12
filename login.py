@@ -1,77 +1,99 @@
 import streamlit as st
 import toml
-import os
+from pathlib import Path
 
 # =========================================================
-# 1) Carrega credenciais do arquivo credentials.toml
+# 1) CARREGAR CREDENCIAIS (SECRETS → LOCAL)
 # =========================================================
 @st.cache_resource
 def load_credentials():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    cred_path = os.path.join(base_dir, "credentials.toml")
+    """
+    Ordem de prioridade:
+    1) Streamlit Cloud -> st.secrets["users"]
+    2) Ambiente local  -> credentials.local.toml
+    """
 
-    if not os.path.exists(cred_path):
-        raise FileNotFoundError(f"Arquivo de credenciais não encontrado em: {cred_path}")
+    # -----------------------------------------
+    # 1) Streamlit Cloud (Secrets)
+    # -----------------------------------------
+    try:
+        users = st.secrets.get("users")
+        if users:
+            return {
+                str(u).strip(): str(p).strip()
+                for u, p in users.items()
+            }
+    except Exception:
+        pass  # segue para local
 
-    data = toml.load(cred_path)
+    # -----------------------------------------
+    # 2) Ambiente local
+    # -----------------------------------------
+    base_dir = Path(__file__).resolve().parent
+    local_path = base_dir / "credentials.local.toml"
 
-    # Pega a seção [users] e já normaliza (strip em chave e valor)
+    if not local_path.exists():
+        st.error(
+            "Arquivo **credentials.local.toml** não encontrado.\n\n"
+            "➡️ Crie esse arquivo para desenvolvimento local\n"
+            "➡️ Ou configure `st.secrets['users']` no Streamlit Cloud"
+        )
+        st.stop()
+
+    data = toml.load(local_path)
     raw_users = data.get("users", {})
-    users = {str(user).strip(): str(pwd).strip() for user, pwd in raw_users.items()}
 
-    # DEBUG opcional: descomente uma vez se quiser ver no terminal
-    # print("USERS CARREGADOS:", users)
-
-    return users
+    return {
+        str(u).strip(): str(p).strip()
+        for u, p in raw_users.items()
+    }
 
 
 USERS = load_credentials()
 
 # =========================================================
-# 2) Função para validar login
+# 2) VALIDAR LOGIN
 # =========================================================
 def check_login(username, password):
+    if not username or not password:
+        return False
+
     user = username.strip()
     pwd = password.strip()
 
-    # DEBUG opcional:
-    # print(f"Tentativa de login -> user='{user}', pwd='{pwd}'")
-
-    if not user or not pwd:
-        return False
-
     stored_pwd = USERS.get(user)
-    if stored_pwd is None:
+    if not stored_pwd:
         return False
 
     return pwd == stored_pwd
 
+
 # =========================================================
-# 3) Interface de Login
+# 3) TELA DE LOGIN
 # =========================================================
 def show_login_page():
     st.markdown("## 🔐 Login — La Moda Analytics")
-    st.markdown("### Bem-vindo! Faça login para acessar o dashboard.")
+    st.markdown("Faça login para acessar o portal.")
 
-    username = st.text_input("Usuário")
-    password = st.text_input("Senha", type="password")
+    with st.form("login_form"):
+        username = st.text_input("Usuário", placeholder="ex: douglas.santos")
+        password = st.text_input("Senha", type="password")
 
-    if st.button("Entrar", use_container_width=True):
-        if check_login(username, password):
-            st.session_state["logged_user"] = username.strip()
-            st.success("Login realizado com sucesso!")
-            st.rerun()
-        else:
-            st.error("Usuário ou senha incorretos.")
+        submitted = st.form_submit_button("Entrar", use_container_width=True)
+
+        if submitted:
+            if check_login(username, password):
+                st.session_state["logged_user"] = username.strip()
+                st.success("Login realizado com sucesso!")
+                st.rerun()
+            else:
+                st.error("Usuário ou senha incorretos.")
+
 
 # =========================================================
-# 4) Exibir login caso usuário não esteja logado
+# 4) PROTEÇÃO GLOBAL
 # =========================================================
 def require_login():
     if "logged_user" not in st.session_state:
         show_login_page()
         st.stop()
-
-# Teste isolado
-if __name__ == "__main__":
-    require_login()

@@ -5,18 +5,41 @@ from calendar import monthrange
 import unicodedata
 import re
 from login import require_login
+from pathlib import Path
+
+# ======================================================
+# CONFIGURAÇÃO DA PÁGINA (OBRIGATÓRIO PRIMEIRO)
+# ======================================================
+st.set_page_config(
+    page_title="Assistente IA — La Moda BI",
+    page_icon="🧠",
+    layout="wide"
+)
+
 
 require_login()
+
+# ======================================================
+# CAMINHOS PADRÃO
+# ======================================================
+BASE_DIR = Path(__file__).resolve().parents[1]
+DATA_ROOT = BASE_DIR.parent / "lamoda_dados"
+DATA_DIR = DATA_ROOT / "data"
+STREAMLIT_DIR = BASE_DIR / ".streamlit"
+
 
 # =====================================================================
 # 0) CONFIGURAÇÃO GERAL + PERSONA (A ALMA DO SEU ASSISTENTE)
 # =====================================================================
 
-with open(".streamlit/styles.css") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+css_path = STREAMLIT_DIR / "styles.css"
+if css_path.exists():
+    st.markdown(
+        f"<style>{css_path.read_text(encoding='utf-8')}</style>",
+        unsafe_allow_html=True
+    )
 
 
-st.set_page_config(page_title="Assistente IA — La Moda BI", page_icon="🧠", layout="wide")
 
 PERSONA = """
 Você é o Assistente Inteligente de BI da La Moda — o “ChatGPT da La Moda”.
@@ -40,9 +63,18 @@ Por padrão, responda como se estivesse conversando pelo chat da empresa.
 # 1) CARREGAR BASE TRATADA
 # =====================================================================
 
-@st.cache_data
+@st.cache_data(show_spinner="Carregando base de dados…")
 def load_base():
-    df = pd.read_csv("data/base_tratada.csv", sep=",", encoding="utf-8")
+    path = DATA_DIR / "base_tratada.csv"
+
+    if not path.exists():
+        st.error(
+            "Base **base_tratada.csv** não encontrada.\n\n"
+            "Execute o `process_data.py` localmente para gerar a base."
+        )
+        st.stop()
+
+    df = pd.read_csv(path, sep=",", encoding="utf-8")
 
     df["Admissão"] = pd.to_datetime(df["Admissão"], errors="coerce")
     df["Data Afastamento"] = pd.to_datetime(df["Data Afastamento"], errors="coerce")
@@ -51,10 +83,8 @@ def load_base():
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
 
-    if "Tempo_de_Casa" in df.columns:
-        df["Tempo_de_Casa"] = pd.to_numeric(df["Tempo_de_Casa"], errors="coerce").fillna(0)
-
     return df
+
 
 df_base = load_base()
 
@@ -241,7 +271,13 @@ def responder(pergunta: str, df):
         elif status == "Desligado":
             df_local = df_local[df_local["Situacao_res"] != "Ativo"]
 
+        hoje = pd.Timestamp(datetime.today())
+        df_local["Data Ref"] = df_local["Data Afastamento"].fillna(hoje)
+        df_local["Tempo_de_Casa"] = (
+            (df_local["Data Ref"] - df_local["Admissão"]).dt.days / 365
+        )
         media = df_local["Tempo_de_Casa"].mean()
+
 
         area_txt = "na empresa" if not area or area == "Geral" else f"na área **{area}**"
 
