@@ -76,7 +76,7 @@ def show_login_page():
     st.markdown("Faça login para acessar o portal.")
 
     with st.form("login_form"):
-        username = st.text_input("Usuário", placeholder="ex: douglas.santos")
+        username = st.text_input("Usuário", placeholder="Digite o seu Usuário")
         password = st.text_input("Senha", type="password")
 
         submitted = st.form_submit_button("Entrar", use_container_width=True)
