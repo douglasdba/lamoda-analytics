@@ -6,38 +6,29 @@ from pathlib import Path
 # 1) CARREGAR CREDENCIAIS
 # =========================================================
 def load_credentials():
-    # -------------------------------
     # Streamlit Cloud
-    # -------------------------------
     if "users" in st.secrets:
         return {
             str(u).strip(): str(p).strip()
             for u, p in st.secrets["users"].items()
         }
 
-    # -------------------------------
     # Ambiente local
-    # -------------------------------
     base_dir = Path(__file__).resolve().parent
     local_path = base_dir / "credentials.local.toml"
 
     if not local_path.exists():
-        st.error(
-            "Arquivo **credentials.local.toml** não encontrado.\n\n"
-            "➡️ Crie para desenvolvimento local\n"
-            "➡️ Ou configure Secrets no Streamlit Cloud"
-        )
+        st.error("Arquivo credentials.local.toml não encontrado.")
         st.stop()
 
     data = toml.load(local_path)
-    raw_users = data.get("users", {})
-
     return {
         str(u).strip(): str(p).strip()
-        for u, p in raw_users.items()
+        for u, p in data.get("users", {}).items()
     }
 
 
+# ⚠️ CARREGA SEM CACHE
 USERS = load_credentials()
 
 # =========================================================
@@ -47,10 +38,7 @@ def check_login(username, password):
     if not username or not password:
         return False
 
-    user = username.strip()
-    pwd = password.strip()
-
-    return USERS.get(user) == pwd
+    return USERS.get(username.strip()) == password.strip()
 
 
 # =========================================================
