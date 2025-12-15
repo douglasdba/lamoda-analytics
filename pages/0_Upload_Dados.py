@@ -5,24 +5,32 @@ from datetime import date
 import re
 from login import require_login
 
-require_login()
-
+# =========================================================
+# CONFIGURAÇÃO DA PÁGINA (SEMPRE PRIMEIRO)
+# =========================================================
 st.set_page_config(
     page_title="Upload de Dados — La Moda BI",
     page_icon="📤",
     layout="wide"
 )
 
+# =========================================================
+# LOGIN
+# =========================================================
+require_login()
+
+# =========================================================
+# TÍTULO
+# =========================================================
 st.title("📤 Upload de Dados — La Moda BI")
 st.markdown(
     "Faça o upload dos arquivos **CLT** e **PJ** no formato `.xls`.\n\n"
-    "⚠️ Os dados **não são salvos** e **não ficam no GitHub**."
+    " Os dados **não são salvos** e **não ficam no GitHub**."
 )
 
 # =========================================================
 # UPLOAD
 # =========================================================
-
 col1, col2 = st.columns(2)
 
 with col1:
@@ -44,37 +52,45 @@ if not file_clt or not file_pj:
     st.stop()
 
 # =========================================================
-# PROCESSAMENTO (MESMA LÓGICA DO process_data.py)
+# PROCESSAMENTO
 # =========================================================
-
 with st.spinner("Processando dados..."):
 
-    df = pd.read_excel(file_clt, engine="xlrd")
-    df2 = pd.read_excel(file_pj, engine="xlrd")
+    df_clt = pd.read_excel(file_clt, engine="xlrd")
+    df_pj = pd.read_excel(file_pj, engine="xlrd")
 
     # ---------------- LIMPEZA INICIAL ----------------
     def limpeza_inicial(d):
         d = d.dropna(how="all").reset_index(drop=True)
         return d.drop(columns=["Posição do Local", "Cadastro"], errors="ignore")
 
-    df = limpeza_inicial(df)
-    df2 = limpeza_inicial(df2)
+    df_clt = limpeza_inicial(df_clt)
+    df_pj = limpeza_inicial(df_pj)
 
     # ---------------- REMOÇÃO DE CARGOS ----------------
     padrao_clt = r"JOVEM APRENDIZ|ESTAGIARI[OA]|APRENDIZ"
     padrao_pj = r"PRESTADOR DE SERVIÇO|SERVENTE DE ZELADORIA|ESPEC\.? DE SERV\.? DE LAVANDERIA"
 
-    cargos_remover_df2 = [
-        "MEDICO DE TRABALHO","FAXINEIRO","MODELO DE PROVA","NUTRICIONISTA","SECRETARIA",
-        "MOTORISTA","PROFESSOR DE INGLES","ESTOQUISTA","IMPRESSOR DE ADESIVOS",
-        "ZELADORA","ZELADOR","VIGILANTE","COACHING","AN ADM PESSOAL I"
+    cargos_remover_pj = [
+        "MEDICO DE TRABALHO", "FAXINEIRO", "MODELO DE PROVA", "NUTRICIONISTA",
+        "SECRETARIA", "MOTORISTA", "PROFESSOR DE INGLES", "ESTOQUISTA",
+        "IMPRESSOR DE ADESIVOS", "ZELADORA", "ZELADOR", "VIGILANTE",
+        "COACHING", "AN ADM PESSOAL I"
     ]
 
-    padrao_df2_extra = r"|".join(map(re.escape, cargos_remover_df2))
+    padrao_pj_extra = r"|".join(map(re.escape, cargos_remover_pj))
 
-    df = df[~df["Título Reduzido (Cargo)"].str.contains(padrao_clt, case=False, na=False)]
-    df2 = df2[~df2["Título Reduzido (Cargo)"].str.contains(padrao_df2_extra, case=False, na=False)]
-    df2 = df2[~df2["Título Reduzido (Cargo)"].str.contains(padrao_pj, case=False, na=False)]
+    df_clt = df_clt[
+        ~df_clt["Título Reduzido (Cargo)"].str.contains(padrao_clt, case=False, na=False)
+    ]
+
+    df_pj = df_pj[
+        ~df_pj["Título Reduzido (Cargo)"].str.contains(padrao_pj_extra, case=False, na=False)
+    ]
+
+    df_pj = df_pj[
+        ~df_pj["Título Reduzido (Cargo)"].str.contains(padrao_pj, case=False, na=False)
+    ]
 
     # ---------------- DATAS ----------------
     DATE_COLS = ["Nascimento", "Admissão", "Data Afastamento"]
@@ -82,22 +98,23 @@ with st.spinner("Processando dados..."):
     def tratar_datas(d):
         for col in DATE_COLS:
             d[col] = (
-                d[col].astype(str)
+                d[col]
+                .astype(str)
                 .str.strip()
                 .replace(["", " ", "0", "00/00/0000", "--", "NaT", "nan"], pd.NA)
             )
             d[col] = pd.to_datetime(d[col], errors="coerce")
         return d
 
-    df = tratar_datas(df)
-    df2 = tratar_datas(df2)
+    df_clt = tratar_datas(df_clt)
+    df_pj = tratar_datas(df_pj)
 
     def calc_idade(dt):
         if pd.isna(dt):
             return 0
         return int((date.today() - dt.date()).days / 365.25)
 
-    for d in (df, df2):
+    for d in (df_clt, df_pj):
         d["Idade"] = d["Nascimento"].apply(calc_idade)
         d["Mes_Admissao"] = d["Admissão"].dt.month.fillna(0).astype(int)
         d["Ano_Admissao"] = d["Admissão"].dt.year.fillna(0).astype(int)
@@ -105,10 +122,17 @@ with st.spinner("Processando dados..."):
         d["Ano_Afastamento"] = d["Data Afastamento"].dt.year.fillna(0).astype(int)
 
     # ---------------- SITUAÇÃO ----------------
-    situacoes_ativas = ["Trabalhando", "Férias", "Licença Maternidade", "Atestado Médico"]
+    df_clt["Situacao_res"] = np.where(
+        df_clt["Situação"].isin([1, 2, 3, 4]),
+        "Ativo",
+        "Desligado/Afastado"
+    )
 
-    df["Situacao_res"] = np.where(df["Situação"].isin([1, 2, 3, 4]), "Ativo", "Desligado/Afastado")
-    df2["Situacao_res"] = np.where(df2["Situação"].isin([1, 2, 3, 4]), "Ativo", "Desligado/Afastado")
+    df_pj["Situacao_res"] = np.where(
+        df_pj["Situação"].isin([1, 2, 3, 4]),
+        "Ativo",
+        "Desligado/Afastado"
+    )
 
     # ---------------- ÁREA ----------------
     def classificar_area(cc):
@@ -119,22 +143,30 @@ with st.spinner("Processando dados..."):
             return "Indústria"
         return "Matriz"
 
-    for d in (df, df2):
+    for d in (df_clt, df_pj):
         d["Area"] = d["C.Custo"].astype(str).apply(classificar_area)
 
     # ---------------- UNIFICA ----------------
-    df["TIPO"] = "CLT"
-    df2["TIPO"] = "PJ"
+    df_clt["TIPO"] = "CLT"
+    df_pj["TIPO"] = "PJ"
 
-    df_final = pd.concat([df, df2], ignore_index=True)
+    df_base = pd.concat([df_clt, df_pj], ignore_index=True)
 
 # =========================================================
-# SALVA EM MEMÓRIA
+# SALVA NA SESSÃO
 # =========================================================
+st.session_state["df_clt"] = df_clt
+st.session_state["df_pj"] = df_pj
+st.session_state["df_base"] = df_base
+st.session_state["data_upload"] = pd.Timestamp.now()
 
-st.session_state["base_tratada"] = df_final
-
-st.success(f"✅ Base carregada com sucesso! Registros: {len(df_final)}")
+# =========================================================
+# FEEDBACK
+# =========================================================
+st.success(
+    f"✅ Dados carregados com sucesso!\n\n"
+    f"CLT: {len(df_clt)} registros | PJ: {len(df_pj)} registros"
+)
 
 st.markdown(
     "➡️ Agora navegue pelas páginas **Turnover**, **Tempo de Casa** ou **Assistente IA**."
