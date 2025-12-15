@@ -8,35 +8,34 @@ from pathlib import Path
 @st.cache_resource
 def load_credentials():
     """
-    Ordem de prioridade:
+    Prioridade:
     1) Streamlit Cloud -> st.secrets["users"]
-    2) Ambiente local  -> credentials.local.toml
+    2) Local           -> credentials.local.toml
     """
 
-    # -----------------------------------------
-    # 1) Streamlit Cloud (Secrets)
-    # -----------------------------------------
+    # =====================================================
+    # 1) STREAMLIT CLOUD
+    # =====================================================
     try:
-        users = st.secrets.get("users")
-        if users:
+        if "users" in st.secrets:
             return {
                 str(u).strip(): str(p).strip()
-                for u, p in users.items()
+                for u, p in st.secrets["users"].items()
             }
     except Exception:
-        pass  # segue para local
+        pass
 
-    # -----------------------------------------
-    # 2) Ambiente local
-    # -----------------------------------------
+    # =====================================================
+    # 2) LOCAL
+    # =====================================================
     base_dir = Path(__file__).resolve().parent
     local_path = base_dir / "credentials.local.toml"
 
     if not local_path.exists():
         st.error(
             "Arquivo **credentials.local.toml** não encontrado.\n\n"
-            "➡️ Crie esse arquivo para desenvolvimento local\n"
-            "➡️ Ou configure `st.secrets['users']` no Streamlit Cloud"
+            "➡️ Crie para desenvolvimento local\n"
+            "➡️ Ou configure Secrets no Streamlit Cloud"
         )
         st.stop()
 
