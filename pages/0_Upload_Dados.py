@@ -5,6 +5,8 @@ from datetime import date
 import re
 from login import require_login
 
+
+
 # =========================================================
 # CONFIGURAÇÃO DA PÁGINA (SEMPRE PRIMEIRO)
 # =========================================================
@@ -151,6 +153,22 @@ with st.spinner("Processando dados..."):
     df_pj["TIPO"] = "PJ"
 
     df_base = pd.concat([df_clt, df_pj], ignore_index=True)
+
+def read_xls(uploaded_file):
+    try:
+        return pd.read_excel(uploaded_file, engine="xlrd")
+    except ImportError:
+        st.error(
+            "Faltou instalar a dependência **xlrd** no Streamlit Cloud.\n\n"
+            "✅ Corrija o `requirements.txt` com: `xlrd==2.0.1` e faça **Reboot** no app."
+        )
+        st.stop()
+    except Exception as e:
+        st.error(f"Erro ao ler o arquivo .xls: {e}")
+        st.stop()
+
+df_clt = read_xls(file_clt)
+df_pj  = read_xls(file_pj)    
 
 # =========================================================
 # SALVA NA SESSÃO
